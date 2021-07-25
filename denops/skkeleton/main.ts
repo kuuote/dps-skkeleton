@@ -2,6 +2,7 @@ import * as jisyo from "./jisyo.ts";
 import type { HenkanType } from "./jisyo.ts";
 import { Denops, ensureString, fn, vars } from "./deps.ts";
 import { getHenkanState, henkan, kakutei } from "./henkan.ts";
+import { getOkuriStr } from "./okuri.ts";
 import { mapping } from "./kana.ts";
 
 async function init(denops: Denops) {
@@ -35,14 +36,18 @@ export async function main(denops: Denops) {
       ensureString(feed);
       ensureString(henkanStr);
 
-      const beforeHook = kakutei(henkanStr, false);
-      let afterHook = "";
+      /*
+       * 変換されている場合は確定してfeedがあれば送信
+       * 変換されていない場合feedが無くて送りありなら変換をかける
+       */
+      const kakuteiResult = kakutei(henkanStr, false);
       if (feed !== "") {
         await fn.feedkeys(denops, feed, "t");
-      } else {
-        afterHook = "";
+      } else if (kakuteiResult === "" && henkanStr.indexOf("*") !== -1) {
+        // TODO: 真面目にやる
+        await fn.feedkeys(denops, " ", "t");
       }
-      return beforeHook + to + afterHook;
+      return kakuteiResult + to;
     },
     async handleHenkan(henkanStr: unknown): Promise<string> {
       ensureString(henkanStr);
@@ -54,7 +59,6 @@ export async function main(denops: Denops) {
       if (henkanState == null) {
         return "ERROR: henkanState == null";
       }
-      const getOkuriStr = (word: string, okuri: string) => "TODO: ちゃんとした実装をする";
       const arg: [HenkanType, string] = henkanState[2]
         ? ["okuriari", getOkuriStr(henkanState[1], henkanState[2])]
         : ["okurinasi", henkanState[1]];

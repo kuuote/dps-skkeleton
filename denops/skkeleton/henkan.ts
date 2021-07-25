@@ -36,12 +36,13 @@ export function kakutei(henkanStr: string, force: boolean): string {
   if (henkanState == null) {
     return "";
   }
-  if ((henkanState[3] ?? "").length === 0) {
+  if (!henkanState[3]) {
     if (force) {
       return "\x08".repeat(henkanStr.length) + henkanState[1];
     } else {
       return "";
     }
   }
-  return "\x08".repeat(henkanStr.length) + henkanState[3];
+  const okuri = henkanState[2] ?? "";
+  return "\x08".repeat(henkanStr.length) + henkanState[3].split(";")[0] + okuri;
 }
