@@ -1,8 +1,6 @@
 import * as jisyo from "./jisyo.ts";
-import type { HenkanType } from "./jisyo.ts";
 import { Denops, ensureString, fn, vars } from "./deps.ts";
-import { getHenkanState, henkan, kakutei } from "./henkan.ts";
-import { getOkuriStr } from "./okuri.ts";
+import { henkan, kakutei } from "./henkan.ts";
 import { mapping } from "./kana.ts";
 
 async function init(denops: Denops) {
@@ -42,6 +40,7 @@ export async function main(denops: Denops) {
        */
       const kakuteiResult = kakutei(henkanStr, false);
       if (feed !== "") {
+        // modeにtを指定することによりユーザーが入力したかのように振る舞う
         await fn.feedkeys(denops, feed, "t");
       } else if (kakuteiResult === "" && henkanStr.indexOf("*") !== -1) {
         // TODO: 真面目にやる
@@ -51,18 +50,7 @@ export async function main(denops: Denops) {
     },
     async handleHenkan(henkanStr: unknown): Promise<string> {
       ensureString(henkanStr);
-      if (henkanStr === "") {
-        // 変換時以外はスペースとして振る舞う
-        return " ";
-      }
-      const henkanState = getHenkanState(henkanStr);
-      if (henkanState == null) {
-        return "ERROR: henkanState == null";
-      }
-      const arg: [HenkanType, string] = henkanState[2]
-        ? ["okuriari", getOkuriStr(henkanState[1], henkanState[2])]
-        : ["okurinasi", henkanState[1]];
-      return await henkan(denops, arg[0], arg[1], henkanState[3] ?? "");
+      return await henkan(denops, henkanStr);
     },
     handleHenkanCancel(henkanStr: unknown): Promise<string> {
       ensureString(henkanStr);

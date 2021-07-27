@@ -1,6 +1,8 @@
 import * as jisyo from "./jisyo.ts";
 import type { Denops } from "./deps.ts";
-import { getHenkanStr } from "./util.ts";
+import type { HenkanType } from "./jisyo.ts";
+import { getOkuriStr } from "./okuri.ts";
+import { jisyoTouroku, registerCandidate } from "./jisyo.ts";
 
 const re = /^▽([^*▼]*)\*?([^▼]*)▼?(.*)/;
 
@@ -10,20 +12,43 @@ export function getHenkanState(str: string): HenkanState | null {
   return str.match(re) as HenkanState | null;
 }
 
-// deno-lint-ignore require-await
+async function jisyoTourokuHelper(
+  denops: Denops,
+  type: HenkanType,
+  word: string,
+  henkanStr: string,
+): Promise<string> {
+  const result = await jisyoTouroku(denops, type, word);
+  if (result) {
+    return "\x08".repeat(henkanStr.length) + result;
+  } else {
+    return "";
+  }
+}
+
 export async function henkan(
   denops: Denops,
-  type: "okuriari" | "okurinasi",
-  word: string,
-  currentCandidate: string,
+  henkanStr: string,
 ): Promise<string> {
+  if (henkanStr === "") {
+    // 変換時以外はスペースとして振る舞う
+    return " ";
+  }
+  const henkanState = getHenkanState(henkanStr);
+  if (henkanState == null) {
+    return "ERROR: henkanState == null";
+  }
+  const [type, word]: [HenkanType, string] = henkanState[2]
+    ? ["okuriari", getOkuriStr(henkanState[1], henkanState[2])]
+    : ["okurinasi", henkanState[1]];
   const candidates = jisyo.getCandidates(type, word);
   if (!candidates) {
-    return "TODO: jisyo touroku mode";
+    return await jisyoTourokuHelper(denops, type, word, henkanStr);
   }
+  const currentCandidate = henkanState[3] ?? "";
   const nextCandidate = candidates[candidates.indexOf(currentCandidate) + 1];
   if (!nextCandidate) {
-    return "TODO: jisyo touroku mode";
+    return await jisyoTourokuHelper(denops, type, word, henkanStr);
   }
   const backspace = currentCandidate === ""
     ? ""
@@ -44,5 +69,10 @@ export function kakutei(henkanStr: string, force: boolean): string {
     }
   }
   const okuri = henkanState[2] ?? "";
+  const result = henkanState[3].split(";")[0];
+  const [type, word]: [HenkanType, string] = henkanState[2]
+    ? ["okuriari", getOkuriStr(henkanState[1], henkanState[2])]
+    : ["okurinasi", henkanState[1]];
+  registerCandidate(type, word, result);
   return "\x08".repeat(henkanStr.length) + henkanState[3].split(";")[0] + okuri;
 }

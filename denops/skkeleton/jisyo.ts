@@ -1,4 +1,5 @@
-import { isArray, isObject, isString } from "./deps.ts";
+import { Denops } from "./deps.ts";
+import { fn, isArray, isObject, isString } from "./deps.ts";
 
 const okuriAriMarker = ";; okuri-ari entries.";
 const okuriNasiMarker = ";; okuri-nasi entries.";
@@ -12,9 +13,32 @@ export type Jisyo = {
 
 export type HenkanType = "okuriari" | "okurinasi";
 
-export function getCandidates(type: HenkanType, word: string) {
-  // TODO: ユーザー辞書をちゃんと処理する
-  return globalJisyo[type][word];
+export function getCandidates(type: HenkanType, word: string): string[] {
+  const candidates = userJisyo[type][word] ?? [];
+  const globalCandidates = globalJisyo[type][word];
+  if (globalCandidates) {
+    const merged = candidates.slice();
+    for (const c of globalCandidates) {
+      if (!merged.includes(c)) {
+        merged.push(c);
+      }
+    }
+    return merged;
+  }
+  return candidates;
+}
+
+export async function registerCandidate(
+  type: HenkanType,
+  word: string,
+  candidate: string,
+) {
+  const candidates = (userJisyo[type][word] ?? []).filter((c) =>
+    c !== candidate
+  );
+  candidates.unshift(candidate);
+  userJisyo[type][word] = candidates;
+  await save();
 }
 
 async function convertJisyo(
@@ -56,7 +80,7 @@ async function loadSKKJisyo(
   }
 }
 
-export function newJisyo(): Jisyo {
+function newJisyo(): Jisyo {
   return {
     okuriari: {},
     okurinasi: {},
@@ -78,6 +102,7 @@ export async function load(
   userPath: string,
   jisyoEncoding = "euc-jp",
 ) {
+  userJisyoPath = userPath;
   globalJisyo = await loadSKKJisyo(
     globalPath,
     "/tmp/skke-jisyo.json",
@@ -92,5 +117,23 @@ export async function load(
   }
 }
 
-export let globalJisyo = newJisyo();
-export let userJisyo = newJisyo();
+async function save() {
+  const serialized = JSON.stringify(userJisyo);
+  await Deno.writeTextFile(userJisyoPath, serialized);
+}
+
+export async function jisyoTouroku(
+  denops: Denops,
+  type: HenkanType,
+  word: string,
+): Promise<string> {
+  const result = await fn.input(denops, word + " ");
+  if (result) {
+    await registerCandidate(type, word, result as string);
+  }
+  return result as string;
+}
+
+let globalJisyo = newJisyo();
+let userJisyo = newJisyo();
+let userJisyoPath = "";
