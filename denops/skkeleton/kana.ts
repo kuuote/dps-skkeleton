@@ -260,5 +260,11 @@ export async function mapping(denops: Denops) {
     helper.cmd(
       `lnoremap <expr> <C-g> denops#request("${denops.name}", "handleHenkanCancel", [skkeleton#get_henkan_str()])`,
     );
+    helper.cmd(
+      `inoremap <expr> <C-j> denops#request("${denops.name}", "enable", [])`,
+    );
+    helper.cmd(
+      `lnoremap <expr> l denops#request("${denops.name}", "disable", [])`,
+    );
   });
 }

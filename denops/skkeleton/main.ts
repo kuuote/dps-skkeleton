@@ -1,4 +1,5 @@
 import * as jisyo from "./jisyo.ts";
+import * as u from "./util.ts";
 import { Denops, ensureString, fn, vars } from "./deps.ts";
 import { henkan, kakutei } from "./henkan.ts";
 import { mapping } from "./kana.ts";
@@ -29,6 +30,29 @@ async function init(denops: Denops) {
 export async function main(denops: Denops) {
   init(denops);
   denops.dispatcher = {
+    async enable(): Promise<string> {
+      if (await denops.eval("&l:iminsert") === 0) {
+        // ノーマルモード等ではsetlocal、挿入モード等では<C-^>が必要
+        await denops.cmd("setlocal iminsert=1");
+        return "\x1e"; // <C-^>
+      } else {
+        return "";
+      }
+    },
+    async disable(): Promise<string> {
+      if (await denops.eval("&l:iminsert") === 1) {
+        if ((await u.mode(denops)).match(/i|c/)) {
+          const kakuteiStr = await denops.eval("skkeleton#get_henkan_str()");
+          ensureString(kakuteiStr);
+          return kakutei(kakuteiStr, true) + "\x1e";
+        } else {
+          await denops.cmd("setlocal iminsert=0");
+          return "";
+        }
+      } else {
+        return "";
+      }
+    },
     async handleKana(to: unknown, feed: unknown, henkanStr: unknown) {
       ensureString(to);
       ensureString(feed);
