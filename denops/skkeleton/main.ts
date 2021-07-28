@@ -1,8 +1,8 @@
 import * as jisyo from "./jisyo.ts";
 import * as u from "./util.ts";
 import { Denops, ensureString, fn, vars } from "./deps.ts";
-import { henkan, kakutei } from "./henkan.ts";
-import { mapping } from "./kana.ts";
+import { getHenkanState, henkan, kakutei } from "./henkan.ts";
+import { hiraToKata, mapping } from "./kana.ts";
 
 async function init(denops: Denops) {
   const globalJisyo = await vars.g.get(
@@ -31,6 +31,7 @@ export async function main(denops: Denops) {
   init(denops);
   denops.dispatcher = {
     async enable(): Promise<string> {
+      console.log(await denops.eval("&l:iminsert"));
       if (await denops.eval("&l:iminsert") === 0) {
         // ノーマルモード等ではsetlocal、挿入モード等では<C-^>が必要
         await denops.cmd("setlocal iminsert=1");
@@ -99,6 +100,15 @@ export async function main(denops: Denops) {
         ret = "*";
       }
       return Promise.resolve(ret);
+    },
+    handleKatakana(henkanStr: unknown): Promise<string> {
+      ensureString(henkanStr);
+      const state = getHenkanState(henkanStr);
+      if(state) {
+        return Promise.resolve("\x08".repeat(henkanStr.length) + hiraToKata(state[1]));
+      } else {
+        return Promise.resolve("");
+      }
     },
   };
   await denops.cmd(`echomsg "loaded skkeleton"`);
