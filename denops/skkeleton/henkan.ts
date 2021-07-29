@@ -86,10 +86,11 @@ export function kakutei(henkanStr: string, force: boolean): string {
     }
   }
   const okuri = henkanState[2] ?? "";
-  const result = henkanState[3].split(";")[0];
+  const result = henkanState[3];
+  const resultStrip = result.split(";")[0];
   const [type, word]: [HenkanType, string] = henkanState[2]
     ? ["okuriari", getOkuriStr(henkanState[1], henkanState[2])]
     : ["okurinasi", henkanState[1]];
   registerCandidate(type, word, result);
-  return "\x08".repeat(henkanStr.length) + henkanState[3].split(";")[0] + okuri;
+  return "\x08".repeat(henkanStr.length) + resultStrip + okuri;
 }
