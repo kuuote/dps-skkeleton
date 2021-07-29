@@ -1,6 +1,6 @@
 import * as jisyo from "./jisyo.ts";
 import * as u from "./util.ts";
-import { Denops, ensureString, fn, vars } from "./deps.ts";
+import { autocmd, Denops, ensureString, fn, vars } from "./deps.ts";
 import { getHenkanState, henkan, kakutei } from "./henkan.ts";
 import { hiraToKata, mapping } from "./kana.ts";
 
@@ -25,6 +25,14 @@ async function init(denops: Denops) {
   ensureString(userJisyo);
   await jisyo.load(globalJisyo, userJisyo, globalJisyoEncoding);
   await mapping(denops);
+
+  await autocmd.group(denops, "skkeleton", (helper) => {
+    helper.define(
+      "InsertLeave",
+      "*",
+      `call denops#request("${denops.name}", "disable", [])`,
+    );
+  });
 }
 
 export async function main(denops: Denops) {
