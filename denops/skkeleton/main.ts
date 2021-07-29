@@ -20,7 +20,7 @@ async function init(denops: Denops) {
   const userJisyo = await vars.g.get(
     denops,
     "skkeleton#user_jisyo",
-    Deno.env.get("HOME") + "/jisyo.json",
+    Deno.env.get("HOME") + "/.skke-jisyo.json",
   );
   ensureString(userJisyo);
   await jisyo.load(globalJisyo, userJisyo, globalJisyoEncoding);
