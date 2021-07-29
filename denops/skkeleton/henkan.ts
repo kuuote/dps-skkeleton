@@ -29,14 +29,27 @@ async function jisyoTourokuHelper(
 export async function henkan(
   denops: Denops,
   henkanStr: string,
+  direction: -1 | 1,
 ): Promise<string> {
   if (henkanStr === "") {
-    // 変換時以外はスペースとして振る舞う
-    return " ";
+    if (direction === 1) {
+      // 変換時以外はスペースとして振る舞う
+      return " ";
+    } else {
+      // 逆方向の時はxもどきを送出する
+      await denops.cmd('call feedkeys("X", "t")');
+      return "";
+    }
   }
   const henkanState = getHenkanState(henkanStr);
   if (henkanState == null) {
     return "ERROR: henkanState == null";
+  }
+  const currentCandidate = henkanState[3] ?? "";
+  if (!currentCandidate && direction === -1) {
+    // 逆方向で候補が存在しない場合も同様にしないとバックスペースになってしまう
+    await denops.cmd('call feedkeys("X", "t")');
+    return "";
   }
   const [type, word]: [HenkanType, string] = henkanState[2]
     ? ["okuriari", getOkuriStr(henkanState[1], henkanState[2])]
@@ -45,10 +58,14 @@ export async function henkan(
   if (!candidates) {
     return await jisyoTourokuHelper(denops, type, word, henkanStr);
   }
-  const currentCandidate = henkanState[3] ?? "";
-  const nextCandidate = candidates[candidates.indexOf(currentCandidate) + 1];
+  const nextCandidate =
+    candidates[candidates.indexOf(currentCandidate) + direction];
   if (!nextCandidate) {
-    return await jisyoTourokuHelper(denops, type, word, henkanStr);
+    if (direction === 1) {
+      return await jisyoTourokuHelper(denops, type, word, henkanStr);
+    } else {
+      return "\x08".repeat(currentCandidate.length + 1);
+    }
   }
   const backspace = currentCandidate === ""
     ? ""

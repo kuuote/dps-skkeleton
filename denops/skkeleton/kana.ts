@@ -3,6 +3,9 @@ import { batch, Denops } from "./deps.ts";
 // tables from eskk.vim
 
 async function map(denops: Denops, from: string, to: string, feed: string) {
+  if (from[0] === "x") {
+    from = "X" + from.slice(1);
+  }
   const args = `["${to}", "${feed}", skkeleton#get_henkan_str()]`;
   await denops.cmd(
     `lnoremap <expr> ${from} denops#request("${denops.name}", "handleKana", ${args})`,
@@ -252,8 +255,10 @@ export async function mapping(denops: Denops) {
     map(helper, ".", "。", "");
     map(helper, ",", "、", "");
 
-    for(const c of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
-      helper.cmd(`lmap ${c} <Cmd>call feedkeys(";\\<lt>Ignore>${c.toLowerCase()}", 't')<CR>`);
+    for (const c of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+      helper.cmd(
+        `lmap ${c} <Cmd>call feedkeys(";\\<lt>Ignore>${c.toLowerCase()}", 't')<CR>`,
+      );
     }
 
     helper.cmd(
@@ -267,6 +272,9 @@ export async function mapping(denops: Denops) {
     );
     helper.cmd(
       `lnoremap <expr> q denops#request("${denops.name}", "handleKatakana", [skkeleton#get_henkan_str()])`,
+    );
+    helper.cmd(
+      `lnoremap <expr> x denops#request("${denops.name}", "handleHenkanPrev", [skkeleton#get_henkan_str()])`,
     );
     helper.cmd(
       `inoremap <expr> <C-j> denops#request("${denops.name}", "enable", [])`,

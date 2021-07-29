@@ -75,7 +75,7 @@ export async function main(denops: Denops) {
     },
     async handleHenkan(henkanStr: unknown): Promise<string> {
       ensureString(henkanStr);
-      return await henkan(denops, henkanStr);
+      return await henkan(denops, henkanStr, 1);
     },
     handleHenkanCancel(henkanStr: unknown): Promise<string> {
       ensureString(henkanStr);
@@ -104,11 +104,17 @@ export async function main(denops: Denops) {
     handleKatakana(henkanStr: unknown): Promise<string> {
       ensureString(henkanStr);
       const state = getHenkanState(henkanStr);
-      if(state) {
-        return Promise.resolve("\x08".repeat(henkanStr.length) + hiraToKata(state[1]));
+      if (state) {
+        return Promise.resolve(
+          "\x08".repeat(henkanStr.length) + hiraToKata(state[1]),
+        );
       } else {
         return Promise.resolve("");
       }
+    },
+    async handleHenkanPrev(henkanStr: unknown): Promise<string> {
+      ensureString(henkanStr);
+      return await henkan(denops, henkanStr, -1);
     },
   };
   await denops.cmd(`echomsg "loaded skkeleton"`);
