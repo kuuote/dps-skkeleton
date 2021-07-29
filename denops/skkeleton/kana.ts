@@ -252,6 +252,10 @@ export async function mapping(denops: Denops) {
     map(helper, ".", "。", "");
     map(helper, ",", "、", "");
 
+    for(const c of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+      helper.cmd(`lmap ${c} <Cmd>call feedkeys(";\\<lt>Ignore>${c.toLowerCase()}", 't')<CR>`);
+    }
+
     helper.cmd(
       `lnoremap <expr> <Space> denops#request("${denops.name}", "handleHenkan", [skkeleton#get_henkan_str()])`,
     );
