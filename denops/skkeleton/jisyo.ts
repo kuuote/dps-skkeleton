@@ -43,7 +43,6 @@ export async function registerCandidate(
 
 async function convertJisyo(
   input: string,
-  output: string,
   jisyoEncoding: string,
 ): Promise<Jisyo> {
   const decoder = new TextDecoder(jisyoEncoding);
@@ -64,20 +63,14 @@ async function convertJisyo(
     okurinasi: Object.fromEntries(okuriNasiEntries),
   };
 
-  await Deno.writeTextFile(output, JSON.stringify(data));
   return data as Jisyo;
 }
 
 async function loadSKKJisyo(
   originalPath: string,
-  cachePath: string,
   jisyoEncoding: string,
 ): Promise<Jisyo> {
-  try {
-    return JSON.parse(await Deno.readTextFile(cachePath)) as Jisyo;
-  } catch {
-    return await convertJisyo(originalPath, cachePath, jisyoEncoding);
-  }
+  return await convertJisyo(originalPath, jisyoEncoding);
 }
 
 function newJisyo(): Jisyo {
@@ -105,7 +98,6 @@ export async function load(
   userJisyoPath = userPath;
   globalJisyo = await loadSKKJisyo(
     globalPath,
-    "/tmp/skke-jisyo.json",
     jisyoEncoding,
   );
   try {
